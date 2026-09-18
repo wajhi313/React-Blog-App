@@ -1,3 +1,8 @@
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { ToastContainer, toast } from "react-toastify";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth } from "../firebase/config";
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -8,37 +13,80 @@ export default function Login() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      toast.error("Invalid Email");
+      return;
+    }
+
+    if (formData.password.trim() === "") {
+      toast.error("Invalid Password");
+      return;
+    }
+
     console.log("Login Data:", formData);
+    try {
+      let response = await signInWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password,
+      );
+      console.log("yeh repsone hai", response);
+
+      if (response.user) {
+        console.log(response.user.displayName);
+        toast.success(
+          `Welcome Back, ${response.user.displayName}! Login successful 🎉`,
+        );
+      }
+    } catch (error) {
+      console.log("ERROR:", error);
+      console.log("CODE:", error.code);
+      console.log("MESSAGE:", error.message);
+
+      if (
+        error.message == "Firebase: Error (auth/email-already-in-use)." ||
+        error.code == "auth/email-already-in-use"
+      ) {
+        toast.error("Email already exists");
+      }
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md border border-gray-200">
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Welcome Back</h2>
-        
+        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
+          Welcome Back
+        </h2>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
             <input
-              type="email"
+              type="text"
               name="email"
               onChange={handleChange}
               placeholder="user@example.com"
-              required
+              autoComplete="email"
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
             <input
               type="password"
               name="password"
               onChange={handleChange}
               placeholder="••••••••"
-              required
+              autoComplete="current-password"
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
             />
           </div>
@@ -53,7 +101,9 @@ export default function Login() {
 
         <div className="my-6 flex items-center justify-between">
           <span className="border-b w-1/5"></span>
-          <span className="text-xs text-gray-500 uppercase font-semibold">Or</span>
+          <span className="text-xs text-gray-500 uppercase font-semibold">
+            Or
+          </span>
           <span className="border-b w-1/5"></span>
         </div>
 
@@ -61,17 +111,27 @@ export default function Login() {
           type="button"
           className="w-full border border-gray-300 flex items-center justify-center gap-2 py-2.5 rounded-lg hover:bg-gray-50 transition"
         >
-          <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
-          <span className="text-gray-700 text-sm font-medium">Sign in with Google</span>
+          <img
+            src="https://www.svgrepo.com/show/475656/google-color.svg"
+            alt="Google"
+            className="w-5 h-5"
+          />
+          <span className="text-gray-700 text-sm font-medium">
+            Sign in with Google
+          </span>
         </button>
 
         <p className="mt-6 text-center text-sm text-gray-600">
           Don't have an account?{" "}
-          <Link to="/signup" className="text-blue-600 font-semibold hover:underline">
+          <Link
+            to="/signup"
+            className="text-blue-600 font-semibold hover:underline"
+          >
             Sign up
           </Link>
         </p>
       </div>
+      <ToastContainer />
     </div>
   );
 }
